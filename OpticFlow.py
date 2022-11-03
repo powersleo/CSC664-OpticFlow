@@ -18,14 +18,18 @@ frameWidthy = (int)(imagey/12)
 borderOffset = 10
 # cropped = gray_image[borderOffset:frameWidthx ,borderOffset:frameWidthx ]
 
-for x in range(1,8):
-    for y in range(1,12):
+#iterate through cells
+#press any key to go to next cell
+for x in range(1,9):
+    for y in range(1,13):
         frameNumberX = x
         frameNumberY = y
         imageName = "cell " + (str)(x) + ", " + (str)(y)
         cv2.imshow(imageName, gray_image[(frameWidthx) * (frameNumberX - 1) + borderOffset:frameWidthx*frameNumberX, (frameWidthy) * (frameNumberY - 1) + borderOffset : frameWidthy*frameNumberY])
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+
 frameNumberX = 1
 frameNumberY = 5
 croppedCell = gray_image[(frameWidthx) * (frameNumberX - 1) + borderOffset:frameWidthx*frameNumberX, (frameWidthy) * (frameNumberY - 1) + borderOffset : frameWidthy*frameNumberY]
