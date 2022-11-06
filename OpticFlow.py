@@ -19,7 +19,7 @@ def OpticFlow(frame1, frame2):
     frame2Array = np.array(frame2)
     # set image shape
     imageResolution = np.shape(frame1Array)
-    w = int(45/2)
+    w = int(2/2)
     cornerList = cv2.goodFeaturesToTrack(frame1Array, 10000, 0.1, 0.1)
 
     #apply gaussianBlur
@@ -27,29 +27,43 @@ def OpticFlow(frame1, frame2):
     frame2_blur = cv2.GaussianBlur(frame2Array,(3,3), 0)
 
     convolveFilterX = np.array([[-1, 1], [-1, 1]])
-    convolveFilterY = np.array([[-1, -1], [1, 1]])
-    convolveFilterT = np.array([[1, 1], [1, 1]])
+    # [-1,1]
+    # [-1,1]
 
+    convolveFilterY = np.array([[-1, -1], [1, 1]])
+    # [-1,-1]
+    # [1 , 1]
+
+    convolveFilterT = np.array([[1, 1], [1, 1]])
+    # [1,1]
+    # [1,1]
+    
 
     #calculate the partial derivative of the images
     frameX = cv2.filter2D(frame1_blur, -1, convolveFilterX)
     frameY = cv2.filter2D(frame1_blur, -1, convolveFilterY)
     frameT = cv2.filter2D(frame2_blur, -1, convolveFilterT) - cv2.filter2D(frame1_blur, -1, convolveFilterT)
-
+    cv2.imshow("original", frame1)
+    cv2.imshow("framex", frameX)
+    cv2.imshow("framey", frameY)
+    cv2.imshow("framet", frameT)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     u = np.zeros(frame1_blur.shape)
     v = np.zeros(frame1_blur.shape)
 
     for corners in cornerList: 
         i, j = corners.ravel()
         i, j = int(i),int(j)
+        # print(i,j)
         I_x = frameX[i-w:i+w+1, j-w:j+w+1].flatten()
         I_y = frameY[i-w:i+w+1, j-w:j+w+1].flatten()
         I_t = frameT[i-w:i+w+1, j-w:j+w+1].flatten()
-
+        print(i,j,"\n",I_x,"\n",I_y, "\n",I_t,"\n")
         b = np.reshape(I_t, (I_t.shape[0],1))
         A = np.vstack((I_x, I_y)).T
 
-        U = np.matmul(np.linalg.pinv(A), b)     # Solving for (u,v) i.e., U
+        U = np.matmul(np.linalg.pinv(A), b) 
 
         u[i,j] = U[0][0]
         v[i,j] = U[1][0]
@@ -71,8 +85,9 @@ gray_image = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
 gray_image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
 
-print(OpticFlow(gray_image, gray_image2))
-# cropped = gray_image[borderOffset:frameWidthx ,borderOffset:frameWidthx ]
+# print(OpticFlow(gray_image, gray_image2))
+# cropped = gray_image[borderOffset:frameWidthx ,borderOffset:frameWidthx]
+
 for x in np.nditer(OpticFlow(gray_image, gray_image2)):
     if(x[0] or x[1]):
         print(x[0], x[1], end=" \n")
