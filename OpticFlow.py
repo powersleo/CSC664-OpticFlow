@@ -74,7 +74,9 @@ gray_image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 print(OpticFlow(gray_image, gray_image2))
 # cropped = gray_image[borderOffset:frameWidthx ,borderOffset:frameWidthx ]
 for x in np.nditer(OpticFlow(gray_image, gray_image2)):
-    print(x, end=" \n")
+    if(x[0] or x[1]):
+        print(x[0], x[1], end=" \n")
+
 #iterate through cells
 #press any key to go to next cell
 
