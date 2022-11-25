@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import time
+import math
 # from scipy import signal1 
 # video = cv2.VideoCapture('zebraFish\X265-Crf15-1.mp4')
 # ret, frame = video.read()
@@ -13,31 +14,24 @@ import time
 # #need threshold value?
 # edges = cv2.Canny(frame,200,300 )
 
+def unitVector(vector1, vector2):
+    x = vector2[0] - vector1[0]
+    y = vector2[1] - vector1[1]
+    magnitude = math.sqrt(x * x + y * y)
+    if(magnitude != 0):
+        return(x/magnitude, y/magnitude)
+    else:
+        return (0,0)
+    
 def OpticFlow(frame1, frame2, cornerList):
     
 
-    # roberts derivative filter
-    convolveFilterX = np.array([[-1, 1], [-1, 1]])
-    # [-1,1]
-    # [-1,1]
-
-    convolveFilterY = np.array([[1, 1], [-1, -1]]) 
-    # [-1,-1]
-    # [1 , 1]
-
-    convolveFilterT = np.array([[1, 1], [1, 1]])
-    # [1,1]
-    # [1,1]
-    convolveFilterTi = np.array([[-1, -1], [-1, -1]])
-    # [1,1]
-    # [1,1]
-    
     # # roberts derivative filter
-    # convolveFilterX = np.array([[0, 1], [-1, 0]])
+    # convolveFilterX = np.array([[-1, 1], [-1, 1]])
     # # [-1,1]
     # # [-1,1]
 
-    # convolveFilterY = np.array([[1, 0], [0, -1]]) 
+    # convolveFilterY = np.array([[1, 1], [-1, -1]]) 
     # # [-1,-1]
     # # [1 , 1]
 
@@ -48,6 +42,22 @@ def OpticFlow(frame1, frame2, cornerList):
     # # [1,1]
     # # [1,1]
     
+    # roberts derivative filter
+    convolveFilterX = np.array([[0, 1], [-1, 0]])
+    # [-1,1]
+    # [-1,1]
+
+    convolveFilterY = np.array([[1, 0], [0, -1]]) 
+    # [-1,-1]
+    # [1 , 1]
+
+    convolveFilterT = np.array([[1, 1], [1, 1]])
+    # [1,1]
+    # [1,1]
+    convolveFilterTi = np.array([[-1, -1], [-1, -1]])
+    # [1,1]
+    # [1,1]
+    
     # using 3x3 kernel
     # prewitt
     # convolveFilterX = np.array([[-1,0 ,1], [-1,0,1], [-1,0,1]])
@@ -55,8 +65,7 @@ def OpticFlow(frame1, frame2, cornerList):
     # # [-10,0,10]
     # # [-3,0,3]
     # convolveFilterY = np.array([[1,1,1], [0,0,0],[-1,-1,-1]])
-    # # [-3,10,3]
-    # # [0,0,0]
+    # # [-3,10,3]    # # [0,0,0]
     # #[3,10,3]
 
     # convolveFilterT = np.array([[1, 1,1], [1, 1,1],[1,1,1]])
@@ -89,21 +98,21 @@ def OpticFlow(frame1, frame2, cornerList):
     # # [1,1,1]
 
 
-
-    convolveFilterX = convolveFilterX *.6
-    convolveFilterY = convolveFilterY * .6
-    convolveFilterT = convolveFilterT * .6
+    convolveFilterX = convolveFilterX 
+    convolveFilterY = convolveFilterY 
+    convolveFilterT = convolveFilterT 
+    
     # #image convolve for gradient 
-    frameX = cv2.filter2D(frame1, -1, convolveFilterX) 
-    frameY = cv2.filter2D(frame1, -1, convolveFilterY) 
-    # frameT = cv2.filter2D(frame2, -1, convolveFilterTi) - cv2.filter2D(frame1, -1, convolveFilterT)
-    frameT = frame1 - frame2
+    frameX = cv2.filter2D(frame1, -1, convolveFilterX) + cv2.filter2D(frame2, -1, convolveFilterX) 
+    frameY = cv2.filter2D(frame1, -1, convolveFilterY) + cv2.filter2D(frame2, -1, convolveFilterY) 
+    frameT = cv2.filter2D(frame2, -1, convolveFilterT) - cv2.filter2D(frame1, -1, convolveFilterT)
+    # frameT = frame1 - frame2
 
 
     # cv2.imshow("original", frame1)
-    # cv2.imshow("framex", frameX)
-    # cv2.imshow("framey", frameY)
-    # cv2.imshow("framet", frameT)
+    cv2.imshow("framex", frameX)
+    cv2.imshow("framey", frameY)
+    cv2.imshow("framet", frameT)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     
@@ -119,24 +128,34 @@ def OpticFlow(frame1, frame2, cornerList):
         # print("this is i, j")
         # print(i,j)
         # print("\n")
-        print(i-w,i+w + 1)
+         #determine size of search
         I_x = frameX[i-w:i+w + 1, j-w:j+w + 1].flatten()
         I_y = frameY[i-w:i+w + 1, j-w:j+w+1].flatten()
         I_t = frameT[i-w:i+w + 1, j-w:j+w+ 1].flatten()
         # print(i,j,"\n",I_x,"\n",I_y, "\n",I_t,"\n")
         b = np.reshape(I_t, (I_t.shape[0],1))
+        
+        
+        
         A = np.vstack((I_x, I_y)).T
+        
+        AAT =np.dot(A, A.T)
+        AATinv = np.linalg.pinv(AAT)
+        ATB = np.dot(A.T, b)
+        AATinvAt = np.dot(AATinv, A)
+        U = np.dot(AATinvAt.T, b)
+        
         # print(b,"\n", A,"\n")
-        U = np.matmul(np.linalg.pinv(A), b) 
         # print("this is U",U)
         # print("end of U")
-        u[i,j] = U[0][0]
-        v[i,j] = U[1][0]
+        print(i,j)
+        u[i-1,j-1] = U[0][0]
+        v[i-1,j-1] = U[1][0]
     return (u,v)
        
 
 
-# imagex = data.shape[0]
+# chrimagex = data.shape[0]
 # imagey = data.shape[1]
 # print(imagex, imagey)
 # frameWidthx = (int)(imagex/8)
@@ -241,7 +260,7 @@ def OpticFlow(frame1, frame2, cornerList):
 # cv2.destroyAllWindows()
 # cv2.imwrite("edges.jpeg", edges)
 
-video = cv2.VideoCapture('zebraFish\X265-Crf15-1.mp4')
+video = cv2.VideoCapture('zebraFish/X265-Crf15-1.mp4')
 ret, frameInitial = video.read()
 borderOffset = 10
 imagex = frameInitial.shape[0]
@@ -251,41 +270,51 @@ frameWidthy = (int)(imagey/12)
 frameNumberX = 1
 frameNumberY = 1
 frameInitial = frameInitial[(frameWidthx) * (frameNumberX - 1) + borderOffset:frameWidthx*frameNumberX, (frameWidthy) * (frameNumberY - 1) + borderOffset : frameWidthy*frameNumberY]
+frameInitialResize = cv2.resize(frameInitial,(frameInitial.shape[0] *3, frameInitial.shape[1]* 3))
 
-
-frameInitialGrey = cv2.cvtColor(frameInitial, cv2.COLOR_BGR2GRAY)
+frameInitialGrey = cv2.cvtColor(frameInitialResize, cv2.COLOR_BGR2GRAY)
 frameInitialArray = np.array(frameInitialGrey)
 frameInitial_blur = cv2.GaussianBlur(frameInitialArray,(3,3), 0)
-cornerList = cv2.goodFeaturesToTrack(frameInitial_blur, 10, 0.1, 0.1)
+cornerList = cv2.goodFeaturesToTrack(frameInitial_blur, 10, 0.01, 10)
 
-mask = np.zeros_like(frameInitial)
-writeFrame = frameInitial
-
+mask = np.zeros_like(frameInitialResize)
+writeFrame = frameInitialResize
+i = 0.0
 while(ret):
-    color = np.random.randint(0, 255, (100, 3))
+    color = np.random.randint(0, 255, [100, 3])
     ret, frameDelta = video.read()
     frameDelta = frameDelta[(frameWidthx) * (frameNumberX - 1) + borderOffset:frameWidthx*frameNumberX, (frameWidthy) * (frameNumberY - 1) + borderOffset : frameWidthy*frameNumberY]
-    frameDeltaGrey = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
+    frameDeltaResize = cv2.resize(frameDelta,(frameDelta.shape[0] *3, frameDelta.shape[1]* 3))
+    frameDeltaGrey = cv2.cvtColor(frameDeltaResize, cv2.COLOR_BGR2GRAY)
     print("image size",frameDelta.shape, "image size:\n")
     frameDeltaArray = np.array(frameDeltaGrey)
     frameDelta_blur = cv2.GaussianBlur(frameDeltaArray,(3,3), 0)
     opticFlow = OpticFlow(frameInitial_blur, frameDelta_blur,cornerList)
-    i = 0
     for corners in cornerList:
         x = int(corners[0][0])
         y = int(corners[0][1])
         # print(opticFlow[0][x,y])
         # print(opticFlow[1][x,y])
         # print((x,y))
-        print(opticFlow[0][x,y] ),y + int(opticFlow[1][x,y])
-        if((x,y) != (x + int(opticFlow[0][x,y]  ),y + int(opticFlow[1][x,y]))):
-            mask = cv2.line(mask, (x,y),(x - int(opticFlow[0][x,y]),y - int(opticFlow[1][x,y])),color[i].tolist(),1)
-        img = cv2.add(frameDelta, mask)
+        # print(opticFlow[0][x,y] ),y + int(opticFlow[1][x,y])
+        print(unitVector((x-1,y-1), (x-1 + (opticFlow[0][x-1,y-1]  ),y-1 + (opticFlow[1][x-1,y-1]))))
+        normalizedVector = unitVector((x-1,y-1), (x-1 + int(opticFlow[0][x-1,y-1]  ),y-1 + int(opticFlow[1][x-1,y-1])))
+        
+        
+        # print(type(normalizedVector))
+        if((x-1,y-1) != (x-1 + normalizedVector[0],y-1 + normalizedVector[1])):
+            print((x-1,y-1),(int(x-1 + (normalizedVector[0]*3)),int(y-1 + (normalizedVector[1]*3))))
+            mask = cv2.arrowedLine(mask,(int(x-1 + (normalizedVector[0]*7)),int(y-1 + (normalizedVector[1]*7))), (x-1,y-1),(255,0,0),1, tipLength=.25)
+        if(i % 10 == 0 ):
+            mask = np.zeros_like(frameInitialResize)
+        print(i % 100)
+
+        img = cv2.add(frameDeltaResize, mask)    
         img = cv2.resize(img, (1000, 1000))
     cv2.imshow('frame', img)
-    k = cv2.waitKey(250)
+    k = cv2.waitKey(333)
     if k == 27:
         break
     i += 1
     frameInitial_blur = frameDelta_blur
-    cornerList = cv2.goodFeaturesToTrack(frameDeltaGrey, 10, 0.1, 0.1)
+    cornerList = cv2.goodFeaturesToTrack(frameDeltaGrey, 10, 0.01, 10)
