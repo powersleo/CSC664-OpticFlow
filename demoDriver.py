@@ -11,6 +11,6 @@ for i in range(0,int(cellsSample)):
         saveFrames = input("save frames 0 or 1:")
     else:
         saveFrames = 0
-    OpticFlow.calculateOpticFlowData(frameNumberX=int(row),frameNumberY=int(column),frameTime=int(frameTime),frameToSample=int(frameToSample),writeFrames=bool(saveFrames), gridOffset=10, view=bool(int(visual)), filterType=0)
+    OpticFlow.calculateOpticFlowData(frameNumberX=int(row),frameNumberY=int(column),frameTime=int(frameTime),frameToSample=int(frameToSample),writeFrames=bool(saveFrames), gridOffset=10, view=bool(int(visual)), filterType=0, magnitudeConstraint=0)
 
     

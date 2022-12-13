@@ -35,8 +35,8 @@ def gridView(image1, searchSize):
 
 def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterScaleY=1, FilterScaleT=1):
 
-    match filterType:
-        case 0:
+ 
+    if(filterType == 0):
             # # roberts derivative filter
             convolveFilterX = np.array([[-1, 1], [-1, 1]])
             # [-1,1]
@@ -52,7 +52,7 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
             convolveFilterTi = np.array([[-1, -1], [-1, -1]])
             # [1,1]
             # [1,1]
-        case 1:
+    elif(filterType == 1):
             #  derivative filter
             convolveFilterX = np.array([[0, 1], [-1, 0]])
             # [-1,1]
@@ -68,7 +68,7 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
             convolveFilterTi = np.array([[-1, -1], [-1, -1]])
             # [1,1]
             # [1,1]
-        case 2:
+    elif(filterType == 2):
             # using 3x3 kernel
             # prewitt
             convolveFilterX = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
@@ -88,7 +88,7 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
             # [1,1,1]
             # [1,1,1]
             # [1,1,1]
-        case 3:
+    elif(filterType == 3):
             # # using 3x3 kernel
             # #sobel
             convolveFilterX = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
@@ -108,7 +108,7 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
             # [1,1,1]
             # [1,1,1]
             # [1,1,1]
-        case _:
+    else:
             # # roberts derivative filter
             convolveFilterX = np.array([[-1, 1], [-1, 1]])
             # [-1,1]
@@ -138,9 +138,9 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
 
     # cv2.imshow("original", frame1)
 
-    # cv2.imshow("framex", frameX)
-    # cv2.imshow("framey", frameY)
-    # cv2.imshow("framet", frameT)
+    cv2.imshow("framex", frameX)
+    cv2.imshow("framey", frameY)
+    cv2.imshow("framet", frameT)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
