@@ -33,7 +33,7 @@ def gridView(image1, searchSize):
     return gridArray
 
 
-def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterScaleY=1, FilterScaleT=1):
+def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterScaleY=1, FilterScaleT=1, temporalNoiseReduction = True):
 
  
     if(filterType == 0):
@@ -132,17 +132,16 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
     # #image convolutions
     frameX = cv2.filter2D(frame1, -1, convolveFilterX)
     frameY = cv2.filter2D(frame1, -1, convolveFilterY)
-    frameT = cv2.filter2D(frame2, -1, convolveFilterT) - \
+    if(temporalNoiseReduction):
+        frameT = cv2.filter2D(frame2, -1, convolveFilterT) - \
         cv2.filter2D(frame1, -1, convolveFilterT)
-    # frameT = frame2 - frame1
+    else:
+        frameT = frame2 - frame1
 
-    # cv2.imshow("original", frame1)
 
     cv2.imshow("framex", frameX)
     cv2.imshow("framey", frameY)
     cv2.imshow("framet", frameT)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
     u = np.zeros(frame1.shape)
     v = np.zeros(frame1.shape)
@@ -158,29 +157,28 @@ def OpticFlow(frame1, frame2, cornerList, filterType=0, filterScaleX=1, filterSc
 
         # print("\n")
         # determine size of search
-        I_x = frameX[i-w:i+w + 1, j-w:j+w + 1].flatten()
-        I_y = frameY[i-w:i+w + 1, j-w:j+w+1].flatten()
-        I_t = frameT[i-w:i+w + 1, j-w:j+w + 1].flatten()
+        Ix = frameX[i-w:i+w + 1, j-w:j+w + 1].flatten()
+        Iy = frameY[i-w:i+w + 1, j-w:j+w+1].flatten()
+        It = frameT[i-w:i+w + 1, j-w:j+w + 1].flatten()
         # print(i,j,"\n",I_x,"\n",I_y, "\n",I_t,"\n")
-        b = np.reshape(I_t, (I_t.shape[0], 1))
+        b = np.reshape(It, (It.shape[0], 1))
 
-        A = np.vstack((I_x, I_y)).T
+        #The transpose of the resulting A is the correct shape for our calculations
+        A = np.vstack((Ix, Iy)).T
+
+
         AAT = np.dot(A, A.T)
+
+        #estimated inverse of A dot AT
         AATinv = np.linalg.pinv(AAT)
-        ATB = np.dot(A.T, b)
+
+
         AATinvAt = np.dot(AATinv, A)
         U = np.dot(AATinvAt.T, b)
-        # print(b,"\n", A,"\n")
-        # print("this is U",U)
-        # print("end of U")
-        # print(i,j)
+    
         if (i < frame1.shape[1] and j < frame1.shape[0] and i != 0 and j != 0):
             u[j, i] = U[0][0]
             v[j, i] = U[1][0]
-            # if(U[0][0] != 0 and U[1][0] != 0):
-            # print("Calculating at position: ")
-            # print(i,j)
-            # print("resultant vector = ",U[0][0],U[1][0] )
 
     return (u, v)
 
@@ -223,8 +221,11 @@ magnitudeConstraint = 20
 # amount of time frame remains on screen
 frameTime = 1
 
+#turn on and off reduction of noise in the temporal derivative by turning off spacial filtering
+temporalNoiseReduction = True
 
-def calculateOpticFlowData(frameNumberX, frameNumberY, frameTime, frameToSample=0, gridOffset=5, frameScaleFactor=3, writeFrames=True, isNormalizedVector=True, vectorScaleFactor=7, showZeroVectors=False, filterType=0, filterScaleX=1, filterScaleY=1, filterScaleT=1, compareResults=False, magnitudeConstraint=20, view=True):
+
+def calculateOpticFlowData(frameNumberX, frameNumberY, frameTime, frameToSample=0, gridOffset=5, frameScaleFactor=3, writeFrames=True, isNormalizedVector=True, vectorScaleFactor=7, showZeroVectors=False, filterType=0, filterScaleX=1, filterScaleY=1, filterScaleT=1, compareResults=False, magnitudeConstraint=20, view=True, temporalNoiseReduction = True):
     video = cv2.VideoCapture('zebraFish/X265-Crf15-1.mp4')
     ret, frameInitial = video.read()
     borderOffset = 10
